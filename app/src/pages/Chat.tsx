@@ -1,9 +1,12 @@
-import React from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import MessageForm from "../components/chat/MessageForm";
 import MessageList from "../components/chat/MessageList";
 import UserInfo from "../components/chat/UserInfo";
+import LogoutButton from "../components/LogoutButton";
 
 const Chat = () => {
+  const { user } = useAuth();
+
   return (
     <div className="container mx-auto w-full w-full h-screen">
       <div className="rounded-lg w-full h-full">
@@ -14,12 +17,15 @@ const Chat = () => {
           </div>
         </div>
         <div className="h-1/6 flex justify-center items-center">
-          <div className="w-full flex items-center gap-4">
-            <div className="w-48">
+          <div className="w-full gap-4 flex flex-col gap-4">
+            {user && (
+              <div className="">
+                <MessageForm />
+              </div>
+            )}
+            <div className=" flex justify-between">
               <UserInfo />
-            </div>
-            <div className="flex-1">
-              <MessageForm />
+              <LogoutButton />
             </div>
           </div>
         </div>

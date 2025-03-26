@@ -10,7 +10,7 @@ const MessageList: React.FC = () => {
     error,
   } = useQuery<Message[]>({
     queryKey: ["messages"],
-    queryFn: () => messageService.getAll(),
+    queryFn: () => messageService.findAll(),
   });
 
   const scrollToBottom = () => {
@@ -38,9 +38,10 @@ const MessageList: React.FC = () => {
       {messages?.map((message) => (
         <div key={message.id} className="rounded-lg bg-white p-4 shadow-sm">
           <p className="text-gray-800">{message.text}</p>
-          <p className="mt-2 text-sm text-gray-500">
-            {new Date(message.createdAt).toLocaleString()}
-          </p>
+          <div className="flex justify-between items-center text-sm text-gray-500/60 mt-4">
+            <p>{message?.user?.email}</p>
+            <p className="">{new Date(message.createdAt).toLocaleString()}</p>
+          </div>
         </div>
       ))}
       <div ref={messagesEndRef} />

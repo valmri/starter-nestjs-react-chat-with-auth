@@ -1,130 +1,153 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { authService, AuthFormData } from "../services/authService";
+import { Link } from "react-router-dom";
+import { AuthFormData } from "../services/authService";
+import { Button } from "./ui/button";
 
 interface AuthFormProps {
-  mode: "signin" | "signup";
+  title: string;
+  submitButtonText: string;
+  onSubmit: (data: AuthFormData) => Promise<void>;
+  redirectText: string;
+  redirectLinkText: string;
+  redirectTo: string;
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
-  const navigate = useNavigate();
+const AuthForm: React.FC<AuthFormProps> = ({
+  title,
+  submitButtonText,
+  onSubmit,
+  redirectText,
+  redirectLinkText,
+  redirectTo,
+}) => {
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
   } = useForm<AuthFormData>();
 
-  const mutation = useMutation({
-    mutationFn: (data: AuthFormData) =>
-      mode === "signup" ? authService.signUp(data) : authService.signIn(data),
-    onSuccess: () => {
-      navigate("/");
-    },
-  });
-
-  const onSubmit = (data: AuthFormData) => {
-    mutation.mutate(data);
+  const handleFormSubmit = async (data: AuthFormData) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await onSubmit(data);
+    } catch (err) {
+      console.error("Authentication error:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Une erreur est survenue lors de l'authentification"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div>
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          {...register("email", {
-            required: "Email is required",
-            pattern: {
-              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-              message: "Invalid email address",
-            },
-          })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-        />
-        {errors.email && (
-          <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-        )}
+    <div className="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+        <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
+          {title}
+        </h2>
       </div>
 
-      <div>
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          {...register("password", {
-            required: "Password is required",
-            minLength: {
-              value: 6,
-              message: "Password must be at least 6 characters",
-            },
-          })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-        />
-        {errors.password && (
-          <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-        )}
-      </div>
+      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <form className="space-y-6" onSubmit={handleSubmit(handleFormSubmit)}>
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium leading-6 text-gray-900"
+            >
+              Adresse email
+            </label>
+            <div className="mt-2">
+              <input
+                id="email"
+                autoComplete="email"
+                {...register("email", {
+                  required: "L'email est requis",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Adresse email invalide",
+                  },
+                })}
+                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-2"
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+          </div>
 
-      {mode === "signup" && (
-        <div>
-          <label
-            htmlFor="confirmPassword"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Confirm Password
-          </label>
-          <input
-            id="confirmPassword"
-            type="password"
-            {...register("confirmPassword", {
-              required: "Please confirm your password",
-              validate: (value) =>
-                value === watch("password") || "Passwords do not match",
-            })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          />
-          {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.confirmPassword.message}
-            </p>
+          <div>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium leading-6 text-gray-900"
+              >
+                Mot de passe
+              </label>
+            </div>
+            <div className="mt-2">
+              <input
+                id="password"
+                type="password"
+                autoComplete={
+                  redirectTo === "/signin" ? "new-password" : "current-password"
+                }
+                {...register("password", {
+                  required: "Le mot de passe est requis",
+                  minLength: {
+                    value: 6,
+                    message:
+                      "Le mot de passe doit contenir au moins 6 caractères",
+                  },
+                })}
+                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-2"
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 p-4 rounded-md">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
           )}
-        </div>
-      )}
 
-      <button
-        type="submit"
-        disabled={mutation.isPending}
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-      >
-        {mutation.isPending
-          ? "Loading..."
-          : mode === "signup"
-          ? "Sign Up"
-          : "Sign In"}
-      </button>
+          <div>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              variant="default"
+              className="w-full cursor-pointer"
+            >
+              {isLoading ? "Chargement..." : submitButtonText}
+            </Button>
+          </div>
+        </form>
 
-      {mutation.isError && (
-        <p className="text-center text-sm text-red-600">
-          {mutation.error instanceof Error
-            ? mutation.error.message
-            : "An error occurred"}
+        <p className="mt-10 text-center text-sm text-gray-500">
+          {redirectText}{" "}
+          <Link
+            to={redirectTo}
+            className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
+          >
+            {redirectLinkText}
+          </Link>
         </p>
-      )}
-    </form>
+      </div>
+    </div>
   );
 };
 

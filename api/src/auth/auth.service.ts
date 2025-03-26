@@ -14,18 +14,18 @@ export class AuthService {
 
   async signUp(signUpDto: SignUpDto) {
     const hashedPassword = await bcrypt.hash(signUpDto.password, 10);
-    const user = await this.usersService.create(
-      signUpDto.email,
-      hashedPassword,
-    );
-
-    const token = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
+    const user = await this.usersService.create({
+      email: signUpDto.email,
+      password: hashedPassword,
     });
 
+    const payload = {
+      id: user.id,
+      email: user.email,
+    };
+
     return {
-      access_token: token,
+      access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         email: user.email,
@@ -35,6 +35,10 @@ export class AuthService {
 
   async signIn(signInDto: SignInDto) {
     const user = await this.usersService.findByEmail(signInDto.email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
     const isPasswordValid = await bcrypt.compare(
       signInDto.password,
       user.password,
@@ -44,17 +48,28 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const token = this.jwtService.sign({
-      sub: user.id,
+    const payload = {
+      id: user.id,
       email: user.email,
-    });
+    };
 
     return {
-      access_token: token,
+      access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         email: user.email,
       },
+    };
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.usersService.findOne(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return {
+      id: user.id,
+      email: user.email,
     };
   }
 }

@@ -5,7 +5,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToOne,
 } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 
 @Entity()
 export class Message {
@@ -14,6 +16,9 @@ export class Message {
 
   @Column('text')
   text: string;
+
+  @ManyToOne(() => User, (user) => user.messages)
+  user: User;
 
   @CreateDateColumn()
   createdAt: Date;

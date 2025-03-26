@@ -10,10 +10,10 @@ export class UsersController {
   create(
     @Body() createUserDto: { email: string; password: string },
   ): Promise<User> {
-    return this.usersService.create(
-      createUserDto.email,
-      createUserDto.password,
-    );
+    return this.usersService.create({
+      email: createUserDto.email,
+      password: createUserDto.password,
+    });
   }
 
   @Get()

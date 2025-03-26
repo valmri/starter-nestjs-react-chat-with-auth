@@ -3,21 +3,32 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class MessagesService {
   constructor(
     @InjectRepository(Message)
     private messagesRepository: Repository<Message>,
+    private usersService: UsersService,
   ) {}
 
-  create(createMessageDto: CreateMessageDto): Promise<Message> {
-    const message = this.messagesRepository.create(createMessageDto);
+  async create(
+    createMessageDto: CreateMessageDto,
+    userId: string,
+  ): Promise<Message> {
+    console.log('createMessageDto : ', createMessageDto);
+    const user = await this.usersService.findOne(userId);
+    const message = this.messagesRepository.create({
+      ...createMessageDto,
+      user,
+    });
     return this.messagesRepository.save(message);
   }
 
   findAll(): Promise<Message[]> {
     return this.messagesRepository.find({
+      relations: ['user'],
       order: {
         createdAt: 'ASC',
       },
@@ -25,7 +36,10 @@ export class MessagesService {
   }
 
   async findOne(id: string): Promise<Message> {
-    const message = await this.messagesRepository.findOneBy({ id });
+    const message = await this.messagesRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
     if (!message) {
       throw new NotFoundException(`Message with ID ${id} not found`);
     }
