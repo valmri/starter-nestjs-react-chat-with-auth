@@ -1,11 +1,28 @@
 import React from "react";
+import MessageForm from "../components/chat/MessageForm";
+import MessageList from "../components/chat/MessageList";
+import UserInfo from "../components/chat/UserInfo";
 
 const Chat = () => {
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Chat Room</h1>
-      <div className="bg-white rounded-lg shadow p-4">
-        {/* Chat content will go here */}
+    <div className="container mx-auto w-full w-full h-screen">
+      <div className="rounded-lg w-full h-full">
+        <div className="h-5/6 relative">
+          <div className="backdrop-blur-sm bg-white/50 h-1/6 absolute top-0 right-3 w-full"></div>
+          <div className="overflow-y-scroll h-full">
+            <MessageList />
+          </div>
+        </div>
+        <div className="h-1/6 flex justify-center items-center">
+          <div className="w-full flex items-center gap-4">
+            <div className="w-48">
+              <UserInfo />
+            </div>
+            <div className="flex-1">
+              <MessageForm />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
