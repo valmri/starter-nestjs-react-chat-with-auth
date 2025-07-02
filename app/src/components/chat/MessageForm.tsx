@@ -1,29 +1,32 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   messageService,
   CreateMessageDto,
 } from "../../services/messageService";
 import { SendHorizontal } from "lucide-react";
+import { getSocket } from "../../services/socket";
+import { authService } from "../../services/authService";
 
 const MessageForm: React.FC = () => {
   const { register, handleSubmit, reset, watch } = useForm<CreateMessageDto>();
-  const queryClient = useQueryClient();
   const messageText = watch("text", "");
 
   const allowToSend = messageText.trim() !== "";
 
-  const mutation = useMutation({
-    mutationFn: (data: CreateMessageDto) => messageService.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["messages"] });
-      reset();
-    },
-  });
+  const socket = getSocket();
 
-  const onSubmit = (data: CreateMessageDto) => {
-    mutation.mutate(data);
+  const onSubmit = async (data: CreateMessageDto) => {
+    try {
+      const user = await authService.getCurrentUser();
+      socket.emit("sendMessage", {
+        text: data.text,
+        userId: user.id,
+      });
+      reset();
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du message :", error);
+    }
   };
 
   return (
@@ -38,19 +41,14 @@ const MessageForm: React.FC = () => {
 
         <button
           type="submit"
-          disabled={mutation.isPending || !allowToSend}
+          disabled={!allowToSend}
           className={`absolute right-0 top-0 bottom-0 rounded-r-lg bg-indigo-500 px-4 text-white hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-300 cursor-pointer ${
             allowToSend ? "opacity-100" : "opacity-0"
           }`}
         >
-          {mutation.isPending ? "Sending..." : <SendHorizontal />}
+          {<SendHorizontal />}
         </button>
       </div>
-      {mutation.isError && (
-        <p className="mt-2 text-sm text-red-600">
-          Error sending message. Please try again.
-        </p>
-      )}
     </form>
   );
 };

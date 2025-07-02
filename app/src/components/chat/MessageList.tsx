@@ -1,46 +1,43 @@
-import React, { useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useEffect, useRef, useState } from "react";
 import { messageService, Message } from "../../services/messageService";
+import { authService, User } from "../../services/authService";
+import { getSocket } from "../../services/socket";
+import MessageForm from "./MessageForm";
 
 const MessageList: React.FC = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [user, setUser] = useState<User | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const {
-    data: messages,
-    isLoading,
-    error,
-  } = useQuery<Message[]>({
-    queryKey: ["messages"],
-    queryFn: () => messageService.findAll(),
-  });
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const socket = getSocket();
 
   useEffect(() => {
-    scrollToBottom();
+    authService.getCurrentUser().then(setUser).catch(console.error);
+    messageService.findAll().then(setMessages);
+
+    socket.on("message", (newMessage: Message) => {
+      setMessages((prev) => [...prev, newMessage]);
+    });
+
+    return () => {
+      socket.off("message");
+    };
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  if (isLoading) {
-    return <div className="text-center">Loading messages...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="text-center text-red-600">
-        Error loading messages. Please try again.
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
-      {messages?.map((message) => (
+      <MessageForm user={user} socket={socket} />
+
+      {messages.map((message) => (
         <div key={message.id} className="rounded-lg bg-white p-4 shadow-sm">
           <p className="text-gray-800">{message.text}</p>
           <div className="flex justify-between items-center text-sm text-gray-500/60 mt-4">
             <p>{message?.user?.email}</p>
-            <p className="">{new Date(message.createdAt).toLocaleString()}</p>
+            <p>{new Date(message.createdAt).toLocaleString()}</p>
           </div>
         </div>
       ))}
