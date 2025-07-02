@@ -10,6 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { MessagesService } from './messages.service';
 import { JwtService } from '@nestjs/jwt';
+import { UsersService } from 'src/users/users.service';
 
 @WebSocketGateway({
   cors: {
@@ -21,11 +22,12 @@ export class MessagesGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private server: Server;
-  private connectedUsers = new Map<string, any>();
+  private connectedUsers: Map<string, string> = new Map();
 
   constructor(
     private readonly messagesService: MessagesService,
     private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
   ) {}
 
   afterInit(server: Server) {
@@ -33,26 +35,41 @@ export class MessagesGateway
     console.log('WebSocket Gateway initialized');
   }
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
+    const token = client.handshake.auth?.token;
+    console.log('🔐 Token reçu lors de la connexion WebSocket:', token);
+
+    if (!token) {
+      console.error('❌ Aucun token fourni dans la connexion WebSocket.');
+      client.disconnect();
+      return;
+    }
+
     try {
-      const token = client.handshake.auth?.token;
-      if (!token) {
-        throw new Error('Token manquant');
-      }
-
       const payload = this.jwtService.verify(token);
-      console.log('Client connecté avec payload JWT :', payload);
+      console.log('🔓 Payload JWT décodé :', payload);
 
+      this.connectedUsers.set(client.id, payload.id);
+
+      // Attache l'utilisateur au socket
       (client as any).user = payload;
-    } catch (err) {
-      console.error("❌ Erreur d'authentification WebSocket :", err.message);
+
+      await this.broadcastConnectedUsers();
+      console.log(
+        `✅ User ${payload.email} connecté avec le socket ID: ${client.id}`,
+      );
+    } catch (e) {
+      console.error(
+        '❌ Erreur lors de la vérification du token WebSocket :',
+        e.message,
+      );
       client.disconnect();
     }
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     this.connectedUsers.delete(client.id);
-    console.log(`Client disconnected: ${client.id}`);
+    await this.broadcastConnectedUsers();
   }
 
   @SubscribeMessage('sendMessage')
@@ -70,6 +87,17 @@ export class MessagesGateway
       { text: data.text },
       user.id,
     );
-    this.server.emit('message', message); // Émet à tous les clients
+    this.server.emit('message', message);
+  }
+
+  private async broadcastConnectedUsers() {
+    const userIds = Array.from(this.connectedUsers.values());
+
+    const users = await Promise.all(
+      userIds.map((id) => this.usersService.findOne(id)),
+    );
+
+    console.log('📡 Emitting connected users:', users);
+    this.server.emit('connectedUsers', users);
   }
 }

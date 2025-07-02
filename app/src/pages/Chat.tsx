@@ -3,12 +3,14 @@ import MessageForm from "../components/chat/MessageForm";
 import MessageList from "../components/chat/MessageList";
 import UserInfo from "../components/chat/UserInfo";
 import LogoutButton from "../components/LogoutButton";
+import ConnectedUsersList from "../components/chat/ConnectedUsersList";
 
 const Chat = () => {
   const { user } = useAuth();
 
   return (
-    <div className="container mx-auto w-full w-full h-screen">
+    <div className="container mx-auto w-full h-screen lg:flex lg:gap-10">
+      <ConnectedUsersList />
       <div className="rounded-lg w-full h-full">
         <div className="h-5/6 relative">
           <div className="backdrop-blur-sm bg-white/50 h-1/6 absolute top-0 right-3 w-full"></div>
@@ -17,7 +19,7 @@ const Chat = () => {
           </div>
         </div>
         <div className="h-1/6 flex justify-center items-center">
-          <div className="w-full gap-4 flex flex-col gap-4">
+          <div className="w-full gap-4 flex flex-col">
             {user && (
               <div className="">
                 <MessageForm />
