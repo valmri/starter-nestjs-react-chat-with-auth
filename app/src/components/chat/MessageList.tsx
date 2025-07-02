@@ -3,6 +3,8 @@ import { messageService, Message } from "../../services/messageService";
 import { authService, User } from "../../services/authService";
 import { getSocket } from "../../services/socket";
 import MessageForm from "./MessageForm";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const MessageList: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -47,6 +49,12 @@ const MessageList: React.FC = () => {
             <p>{new Date(message.createdAt).toLocaleString()}</p>
           </div>
           <div className="flex items-center justify-end mt-2 space-x-2">
+            <p>
+              {formatDistanceToNow(new Date(message.createdAt), {
+                addSuffix: true,
+                locale: fr,
+              })}
+            </p>
             <button
               onClick={() => {
                 if (!user) return;
