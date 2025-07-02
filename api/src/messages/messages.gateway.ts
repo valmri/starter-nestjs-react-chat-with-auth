@@ -49,6 +49,10 @@ export class MessagesGateway
       const payload = this.jwtService.verify(token);
       console.log('🔓 Payload JWT décodé :', payload);
 
+      const user = await this.usersService.findOne(payload.id);
+      user.lastSeen = new Date();
+      await this.usersService.updateLastSeen(user.id);
+
       this.connectedUsers.set(client.id, payload.id);
 
       // Attache l'utilisateur au socket
@@ -68,7 +72,11 @@ export class MessagesGateway
   }
 
   async handleDisconnect(client: Socket) {
-    this.connectedUsers.delete(client.id);
+    const userId = this.connectedUsers.get(client.id);
+    if (userId) {
+      await this.usersService.updateLastSeen(userId);
+      this.connectedUsers.delete(client.id);
+    }
     await this.broadcastConnectedUsers();
   }
 

@@ -39,4 +39,10 @@ export class UsersService {
   async findManyByIds(ids: string[]): Promise<User[]> {
     return this.usersRepository.findBy({ id: In(ids) });
   }
+
+  async updateLastSeen(userId: string): Promise<void> {
+    const user = await this.findOne(userId);
+    user.lastSeen = new Date();
+    await this.usersRepository.save(user);
+  }
 }
