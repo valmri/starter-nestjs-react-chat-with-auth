@@ -19,8 +19,15 @@ const MessageList: React.FC = () => {
       setMessages((prev) => [...prev, newMessage]);
     });
 
+    socket.on("messageLiked", (updated: Message) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === updated.id ? updated : m))
+      );
+    });
+
     return () => {
       socket.off("message");
+      socket.off("messageLiked");
     };
   }, []);
 
@@ -38,6 +45,21 @@ const MessageList: React.FC = () => {
           <div className="flex justify-between items-center text-sm text-gray-500/60 mt-4">
             <p>{message?.user?.email}</p>
             <p>{new Date(message.createdAt).toLocaleString()}</p>
+          </div>
+          <div className="flex items-center justify-end mt-2 space-x-2">
+            <button
+              onClick={() => {
+                if (!user) return;
+                socket.emit("likeMessage", {
+                  messageId: message.id,
+                  userId: user.id,
+                });
+              }}
+              className="text-sm text-blue-500 hover:underline cursor-pointer"
+            >
+              ❤️ Like
+            </button>
+            <span className="text-sm text-gray-600">{message.likes}</span>
           </div>
         </div>
       ))}

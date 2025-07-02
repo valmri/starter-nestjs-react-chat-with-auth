@@ -11,6 +11,7 @@ export interface Message {
     id: string;
     email: string;
   };
+  likes: number;
 }
 
 export interface CreateMessageDto {
@@ -61,5 +62,15 @@ export const messageService = {
         Authorization: `Bearer ${token}`,
       },
     });
+  },
+
+  async like(id: string): Promise<Message> {
+    const token = authService.getToken();
+    const response = await axios.patch(`${API_URL}/${id}/like`, null, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
   },
 };

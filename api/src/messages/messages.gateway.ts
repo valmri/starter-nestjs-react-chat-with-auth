@@ -108,4 +108,15 @@ export class MessagesGateway
     console.log('📡 Emitting connected users:', users);
     this.server.emit('connectedUsers', users);
   }
+
+  @SubscribeMessage('likeMessage')
+  async handleLikeMessage(
+    @MessageBody() data: { messageId: string; userId: string },
+  ): Promise<void> {
+    const updated = await this.messagesService.likeMessage(
+      data.messageId,
+      data.userId,
+    );
+    this.server.emit('messageLiked', updated);
+  }
 }

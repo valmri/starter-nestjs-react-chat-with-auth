@@ -57,4 +57,10 @@ export class MessagesService {
   async remove(id: string): Promise<void> {
     await this.messagesRepository.softDelete(id);
   }
+
+  async likeMessage(messageId: string, userId: string): Promise<Message> {
+    const message = await this.findOne(messageId);
+    message.likes = ((message.likes as number) || 0) + 1;
+    return this.messagesRepository.save(message);
+  }
 }

@@ -28,4 +28,7 @@ export class Message {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  @Column({ default: 0 })
+  likes: number;
 }
