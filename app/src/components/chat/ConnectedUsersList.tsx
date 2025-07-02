@@ -19,7 +19,11 @@ const ConnectedUsersList: React.FC = () => {
 
   useEffect(() => {
     socket.on("connectedUsers", (connected: User[]) => {
-      setUsers(connected);
+      const sorted = connected.sort(
+        (a, b) =>
+          new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()
+      );
+      setUsers(sorted);
     });
 
     return () => {
